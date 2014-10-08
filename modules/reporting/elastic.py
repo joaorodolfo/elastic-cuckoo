@@ -198,5 +198,5 @@ class ElasticDB(Report):
         report["behavior"]["processes"] = new_processes
 
         # Store the report and retrieve its object id.
-        self.es.index(index="cuckoo", doc_type="analysis", body=report)
+        self.es.index(index="cuckoo", doc_type="analysis", id=results["info"]["id"], body=report)
 

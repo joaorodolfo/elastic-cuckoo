@@ -11,7 +11,8 @@ from django.http import HttpResponse
 from django.shortcuts import render_to_response
 from django.views.decorators.http import require_safe
 
-import pymongo
+#import pymongo
+from elasticsearch import Elasticsearch
 from bson.objectid import ObjectId
 from django.core.exceptions import PermissionDenied
 from gridfs import GridFS
@@ -20,8 +21,11 @@ sys.path.append(settings.CUCKOO_PATH)
 
 from lib.cuckoo.core.database import Database, TASK_PENDING
 
-results_db = pymongo.connection.Connection(settings.MONGO_HOST, settings.MONGO_PORT).cuckoo
-fs = GridFS(results_db)
+#results_db = pymongo.connection.Connection(settings.MONGO_HOST, settings.MONGO_PORT).cuckoo
+es = Elasticsearch()
+
+#FIXME: support attachments in elastic
+#fs = GridFS(results_db)
 
 @require_safe
 def index(request):
@@ -75,6 +79,8 @@ def chunk(request, task_id, pid, pagenum):
         raise PermissionDenied
 
     if request.is_ajax():
+
+        '''
         record = results_db.analysis.find_one(
             {
                 "info.id": int(task_id),
@@ -85,6 +91,25 @@ def chunk(request, task_id, pid, pagenum):
                 "behavior.processes.calls": 1
             }
         )
+        '''
+
+
+        #FIXME
+        # http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html
+        record = es.search(index="cuckoo", 
+                            doc_type="analysis", 
+                            fields="behavior.processes.process_id,behavior.processes.calls",  
+                            body= {
+                                "query": 
+                                    { 
+                                        "ids" : {"values" : [int(task_id)]},
+                                        "query_string" : {
+                                          "default_field": "behavior.processes.process_id",
+                                          "query": str(pid)
+                                        }
+                                    }
+                            })
+
 
         if not record:
             raise PermissionDenied
@@ -151,7 +176,9 @@ def filtered_chunk(request, task_id, pid, category):
 
 @require_safe
 def report(request, task_id):
-    report = results_db.analysis.find_one({"info.id": int(task_id)}, sort=[("_id", pymongo.DESCENDING)])
+    #report = results_db.analysis.find_one({"info.id": int(task_id)}, sort=[("_id", pymongo.DESCENDING)])
+    report = es.get(index="cuckoo", doc_type="analysis", id=int(task_id))['_source']
+
 
     if not report:
         return render_to_response("error.html",
@@ -162,6 +189,7 @@ def report(request, task_id):
                               {"analysis": report},
                               context_instance=RequestContext(request))
 
+# FIXME: implement
 @require_safe
 def file(request, category, object_id):
     file_object = results_db.fs.files.find_one({"_id": ObjectId(object_id)})
@@ -211,31 +239,254 @@ def search(request):
 
             # Search logic.
             if term == "name":
-                records = results_db.analysis.find({"target.file.name": {"$regex": value, "$options": "-i"}}).sort([["_id", -1]])
+                #records = results_db.analysis.find({"target.file.name": {"$regex": value, "$options": "-i"}}).sort([["_id", -1]])
+                #FIXME: implement regexp
+                result = es.search(
+                              index="cuckoo", 
+                              doc_type="analysis", 
+                              body={"query": 
+                                { 
+                                      "query_string" : {
+                                          "default_field": "target.file.name",
+                                          "query": value       
+                                      }
+                                }
+                              }
+                            )['hits']['hits']
+
+                records = []
+                for r in result:
+                    records.append(r['_source'])
+
+
             elif term == "type":
-                records = results_db.analysis.find({"target.file.type": {"$regex": value, "$options": "-i"}}).sort([["_id", -1]])
+                #records = results_db.analysis.find({"target.file.type": {"$regex": value, "$options": "-i"}}).sort([["_id", -1]])
+                #FIXME: implement regexp
+                result = es.search(
+                              index="cuckoo", 
+                              doc_type="analysis", 
+                              body={"query": 
+                                { 
+                                      "query_string" : {
+                                          "default_field": "target.file.type",
+                                          "query": value
+                                      }
+                                }
+                              }
+                            )
+                records = []
+                for r in result:
+                    records.append(r['_source'])
+
             elif term == "string":
-                records = results_db.analysis.find({"strings" : {"$regex" : value, "$options" : "-1"}}).sort([["_id", -1]])
+                #records = results_db.analysis.find({"strings" : {"$regex" : value, "$options" : "-1"}}).sort([["_id", -1]])
+                #FIXME: implement regexp
+                result = es.search(
+                              index="cuckoo", 
+                              doc_type="analysis", 
+                              body={"query": 
+                                { 
+                                      "query_string" : {
+                                          "default_field": "strings",
+                                          "query": value
+                                      }
+                                }
+                              }
+                            )
+                records = []
+                for r in result:
+                    records.append(r['_source'])
+
             elif term == "ssdeep":
-                records = results_db.analysis.find({"target.file.ssdeep": {"$regex": value, "$options": "-i"}}).sort([["_id", -1]])
+                #records = results_db.analysis.find({"target.file.ssdeep": {"$regex": value, "$options": "-i"}}).sort([["_id", -1]])
+                #FIXME: implement regexp
+                result = es.search(
+                              index="cuckoo", 
+                              doc_type="analysis", 
+                              body={"query": 
+                                { 
+                                      "query_string" : {
+                                          "default_field": "target.file.ssdeep",
+                                          "query": value
+                                      }
+                                }
+                              }
+                            )
+                records = []
+                for r in result:
+                    records.append(r['_source'])
+
             elif term == "crc32":
-                records = results_db.analysis.find({"target.file.crc32": value}).sort([["_id", -1]])
+                #records = results_db.analysis.find({"target.file.crc32": value}).sort([["_id", -1]])
+                #FIXME: implement regexp
+                result = es.search(
+                              index="cuckoo", 
+                              doc_type="analysis", 
+                              body={"query": 
+                                { 
+                                      "query_string" : {
+                                          "default_field": "target.file.crc32",
+                                          "query": value
+                                      }
+                                }
+                              }
+                            )
+                records = []
+                for r in result:
+                    records.append(r['_source'])
+
             elif term == "file":
-                records = results_db.analysis.find({"behavior.summary.files": {"$regex": value, "$options": "-i"}}).sort([["_id", -1]])
+                #records = results_db.analysis.find({"behavior.summary.files": {"$regex": value, "$options": "-i"}}).sort([["_id", -1]])
+                #FIXME: implement regexp
+                result = es.search(
+                              index="cuckoo", 
+                              doc_type="analysis", 
+                              body={"query": 
+                                { 
+                                      "query_string" : {
+                                          "default_field": "behavior.summary.files",
+                                          "query": value
+                                      }
+                                }
+                              }
+                            )
+                records = []
+                for r in result:
+                    records.append(r['_source'])
+
             elif term == "key":
-                records = results_db.analysis.find({"behavior.summary.keys": {"$regex": value, "$options": "-i"}}).sort([["_id", -1]])
+                #records = results_db.analysis.find({"behavior.summary.keys": {"$regex": value, "$options": "-i"}}).sort([["_id", -1]])
+                #FIXME: implement regexp
+                result = es.search(
+                              index="cuckoo", 
+                              doc_type="analysis", 
+                              body={"query": 
+                                { 
+                                      "query_string" : {
+                                          "default_field": "behavior.summary.keys",
+                                          "query": value
+                                      }
+                                }
+                              }
+                            )
+                records = []
+                for r in result:
+                    records.append(r['_source'])
+
             elif term == "mutex":
-                records = results_db.analysis.find({"behavior.summary.mutexes": {"$regex": value, "$options": "-i"}}).sort([["_id", -1]])
+                #records = results_db.analysis.find({"behavior.summary.mutexes": {"$regex": value, "$options": "-i"}}).sort([["_id", -1]])
+                #FIXME: implement regexp
+                result = es.search(
+                              index="cuckoo", 
+                              doc_type="analysis", 
+                              body={"query": 
+                                { 
+                                      "query_string" : {
+                                          "default_field": "behavior.summary.mutexes",
+                                          "query": value
+                                      }
+                                }
+                              }
+                            )
+                records = []
+                for r in result:
+                    records.append(r['_source'])
+
             elif term == "domain":
-                records = results_db.analysis.find({"network.domains.domain": {"$regex": value, "$options": "-i"}}).sort([["_id", -1]])
+                #records = results_db.analysis.find({"network.domains.domain": {"$regex": value, "$options": "-i"}}).sort([["_id", -1]])
+                #FIXME: implement regexp
+                result = es.search(
+                              index="cuckoo", 
+                              doc_type="analysis", 
+                              body={"query": 
+                                { 
+                                      "query_string" : {
+                                          "default_field": "network.domains.domain",
+                                          "query": value
+                                      }
+                                }
+                              }
+                            )
+                records = []
+                for r in result:
+                    records.append(r['_source'])
+
             elif term == "ip":
-                records = results_db.analysis.find({"network.hosts": value}).sort([["_id", -1]])
+                #records = results_db.analysis.find({"network.hosts": value}).sort([["_id", -1]])
+                #FIXME: implement regexp
+                result = es.search(
+                              index="cuckoo", 
+                              doc_type="analysis", 
+                              body={"query": 
+                                { 
+                                      "query_string" : {
+                                          "default_field": "network.hosts",
+                                          "query": value
+                                      }
+                                }
+                              }
+                            )
+                records = []
+                for r in result:
+                    records.append(r['_source'])
+
             elif term == "signature":
-                records = results_db.analysis.find({"signatures.description": {"$regex": value, "$options": "-i"}}).sort([["_id", -1]])
+                #records = results_db.analysis.find({"signatures.description": {"$regex": value, "$options": "-i"}}).sort([["_id", -1]])
+                #FIXME: implement regexp
+                result = es.search(
+                              index="cuckoo", 
+                              doc_type="analysis", 
+                              body={"query": 
+                                { 
+                                      "query_string" : {
+                                          "default_field": "signatures.description",
+                                          "query": value
+                                      }
+                                }
+                              }
+                            )
+                records = []
+                for r in result:
+                    records.append(r['_source'])
+
             elif term == "url":
-                records = results_db.analysis.find({"target.url": value}).sort([["_id", -1]])
+                #records = results_db.analysis.find({"target.url": value}).sort([["_id", -1]])
+                #FIXME: implement regexp
+                result = es.search(
+                              index="cuckoo", 
+                              doc_type="analysis", 
+                              body={"query": 
+                                { 
+                                      "query_string" : {
+                                          "default_field": "target.url",
+                                          "query": value
+                                      }
+                                }
+                              }
+                            )
+                records = []
+                for r in result:
+                    records.append(r['_source'])
+
             elif term == "imphash":
-                records = results_db.analysis.find({"static.pe_imphash": value}).sort([["_id", -1]])
+                #records = results_db.analysis.find({"static.pe_imphash": value}).sort([["_id", -1]])
+                #FIXME: implement regexp
+                result = es.search(
+                              index="cuckoo", 
+                              doc_type="analysis", 
+                              body={"query": 
+                                { 
+                                      "query_string" : {
+                                          "default_field": "static.pe_imphash",
+                                          "query": value
+                                      }
+                                }
+                              }
+                            )
+                records = []
+                for r in result:
+                    records.append(r['_source'])
+
             else:
                 return render_to_response("analysis/search.html",
                                           {"analyses": None,
@@ -243,14 +494,80 @@ def search(request):
                                            "error": "Invalid search term: %s" % term},
                                           context_instance=RequestContext(request))
         else:
+
+            #FIXME: implement
+
             if re.match(r"^([a-fA-F\d]{32})$", value):
-                records = results_db.analysis.find({"target.file.md5": value}).sort([["_id", -1]])
+                #records = results_db.analysis.find({"target.file.md5": value}).sort([["_id", -1]])
+
+                result = es.search(
+                              index="cuckoo", 
+                              doc_type="analysis", 
+                              body={"query": 
+                                { 
+                                      "query_string" : {
+                                          "default_field": "target.file.md5",
+                                          "query": value
+                                      }
+                                }
+                              }
+                            )
+                records = []
+                for r in result:
+                    records.append(r['_source'])
+
+
             elif re.match(r"^([a-fA-F\d]{40})$", value):
-                records = results_db.analysis.find({"target.file.sha1": value}).sort([["_id", -1]])
+                #records = results_db.analysis.find({"target.file.sha1": value}).sort([["_id", -1]])
+                result = es.search(
+                              index="cuckoo", 
+                              doc_type="analysis", 
+                              body={"query": 
+                                { 
+                                      "query_string" : {
+                                          "default_field": "target.file.sha1",
+                                          "query": value
+                                      }
+                                }
+                              }
+                            )
+                records = []
+                for r in result:
+                    records.append(r['_source'])                
             elif re.match(r"^([a-fA-F\d]{64})$", value):
-                records = results_db.analysis.find({"target.file.sha256": value}).sort([["_id", -1]])
+                #records = results_db.analysis.find({"target.file.sha256": value}).sort([["_id", -1]])
+                result = es.search(
+                              index="cuckoo", 
+                              doc_type="analysis", 
+                              body={"query": 
+                                { 
+                                      "query_string" : {
+                                          "default_field": "target.file.sha256",
+                                          "query": value
+                                      }
+                                }
+                              }
+                            )
+                records = []
+                for r in result:
+                    records.append(r['_source'])                
             elif re.match(r"^([a-fA-F\d]{128})$", value):
-                records = results_db.analysis.find({"target.file.sha512": value}).sort([["_id", -1]])
+                #records = results_db.analysis.find({"target.file.sha512": value}).sort([["_id", -1]])
+                result = es.search(
+                              index="cuckoo", 
+                              doc_type="analysis", 
+                              body={"query": 
+                                { 
+                                      "query_string" : {
+                                          "default_field": "target.file.sha512",
+                                          "query": value
+                                      }
+                                }
+                              }
+                            )
+                records = []
+                for r in result:
+                    records.append(r['_source'])                
             else:
                 return render_to_response("analysis/search.html",
                                           {"analyses": None,
@@ -261,6 +578,7 @@ def search(request):
         # Get data from cuckoo db.
         db = Database()
         analyses = []
+
 
         for result in records:
             new = db.view_task(result["info"]["id"])
@@ -290,6 +608,7 @@ def search(request):
                                    "error": None},
                                   context_instance=RequestContext(request))
 
+# FIXME: implement remove
 @require_safe
 def remove(request, task_id):
     """Remove an analysis.
@@ -327,7 +646,7 @@ def remove(request, task_id):
     # More analysis found with the same ID, like if process.py was run manually.
     else:
         return render_to_response("error.html",
-                                  {"error": "The specified analysis is duplicated in mongo, please check manually"},
+                                  {"error": "The specified analysis is duplicated in elastic, please check manually"},
                                   context_instance=RequestContext(request))
 
     # Delete from SQL db.
