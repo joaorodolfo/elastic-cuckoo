@@ -242,22 +242,18 @@ def search(request):
             if term == "name":
                 #records = results_db.analysis.find({"target.file.name": {"$regex": value, "$options": "-i"}}).sort([["_id", -1]])
                 #FIXME: implement regexp
+
                 result = es.search(
                               index="cuckoo", 
                               doc_type="analysis", 
-                              body={"query": 
-                                { 
-                                      "term" : {
-                                          "target.file.name" : value       
-                                      }
-                                }
-                              }
-                            )['hits']['hits']
+                              q='target.file.name : "' + value + '"'
+                                  )
+
 
                 print result
 
                 records = []
-                for r in result:
+                for r in result['hits']['hits']:
                     records.append(r['_source'])
 
 
@@ -267,16 +263,11 @@ def search(request):
                 result = es.search(
                               index="cuckoo", 
                               doc_type="analysis", 
-                              body={"query": 
-                                { 
-                                      "term" : {
-                                          "target.file.type" : value
-                                      }
-                                }
-                              }
-                            )
+                              q='target.file.type : "' + value + '"'
+                                  )
+
                 records = []
-                for r in result:
+                for r in result['hits']['hits']:
                     records.append(r['_source'])
 
             elif term == "string":
@@ -293,8 +284,15 @@ def search(request):
                                 }
                               }
                             )
+
+                result = es.search(
+                              index="cuckoo", 
+                              doc_type="analysis", 
+                              q='strings: "' + value + '"'
+                                  )
+
                 records = []
-                for r in result:
+                for r in result['hits']['hits']:
                     records.append(r['_source'])
 
             elif term == "ssdeep":
@@ -303,16 +301,11 @@ def search(request):
                 result = es.search(
                               index="cuckoo", 
                               doc_type="analysis", 
-                              body={"query": 
-                                { 
-                                      "term" : {
-                                          "target.file.ssdeep" : value
-                                      }
-                                }
-                              }
-                            )
+                              q='target.file.ssdeep : "' + value + '"'
+                                  )
+
                 records = []
-                for r in result:
+                for r in result['hits']['hits']:
                     records.append(r['_source'])
 
             elif term == "crc32":
@@ -321,34 +314,27 @@ def search(request):
                 result = es.search(
                               index="cuckoo", 
                               doc_type="analysis", 
-                              body={"query": 
-                                { 
-                                      "term" : {
-                                          "target.file.crc32" : value
-                                      }
-                                }
-                              }
-                            )
+                              q='target.file.crc32 : "' + value + '"'
+                                  )
+
                 records = []
-                for r in result:
+                for r in result['hits']['hits']:
                     records.append(r['_source'])
 
             elif term == "file":
                 #records = results_db.analysis.find({"behavior.summary.files": {"$regex": value, "$options": "-i"}}).sort([["_id", -1]])
                 #FIXME: implement regexp
+
                 result = es.search(
                               index="cuckoo", 
                               doc_type="analysis", 
-                              body={"query": 
-                                { 
-                                      "term" : {
-                                          "behavior.summary.files" : value
-                                      }
-                                }
-                              }
-                            )
+                              q='behavior.summary.files : "' + value + '"'
+                                  )
+
+
+
                 records = []
-                for r in result:
+                for r in result['hits']['hits']:
                     records.append(r['_source'])
 
             elif term == "key":
@@ -357,16 +343,11 @@ def search(request):
                 result = es.search(
                               index="cuckoo", 
                               doc_type="analysis", 
-                              body={"query": 
-                                { 
-                                      "term" : {
-                                          "behavior.summary.keys" : value
-                                      }
-                                }
-                              }
-                            )
+                              q='behavior.summary.keys : "' + value + '"'
+                                  )
+
                 records = []
-                for r in result:
+                for r in result['hits']['hits']:
                     records.append(r['_source'])
 
             elif term == "mutex":
@@ -375,107 +356,101 @@ def search(request):
                 result = es.search(
                               index="cuckoo", 
                               doc_type="analysis", 
-                              body={"query": 
-                                { 
-                                      "term" : {
-                                          "behavior.summary.mutexes" : value
-                                      }
-                                }
-                              }
-                            )
+                              q='behavior.summary.mutexes : "' + value + '"'
+                                  )
+
                 records = []
-                for r in result:
+                for r in result['hits']['hits']:
                     records.append(r['_source'])
 
             elif term == "domain":
                 #records = results_db.analysis.find({"network.domains.domain": {"$regex": value, "$options": "-i"}}).sort([["_id", -1]])
                 #FIXME: implement regexp
+
                 result = es.search(
                               index="cuckoo", 
                               doc_type="analysis", 
-                              body={"query": 
-                                { 
-                                      "term" : {
-                                          "network.domains.domain" : value
-                                      }
-                                }
-                              }
-                            )
+                              q='network.domains.domain : "' + value + '"'
+                                  )
+
+
+
                 records = []
-                for r in result:
+                for r in result['hits']['hits']:
                     records.append(r['_source'])
 
             elif term == "ip":
                 #records = results_db.analysis.find({"network.hosts": value}).sort([["_id", -1]])
                 #FIXME: implement regexp
+
                 result = es.search(
                               index="cuckoo", 
                               doc_type="analysis", 
-                              body={"query": 
-                                { 
-                                      "term" : {
-                                          "network.hosts" : value
-                                      }
-                                }
-                              }
-                            )
+                              q='network.hosts : "' + value + '"'
+                                  )
+
                 records = []
-                for r in result:
+                for r in result['hits']['hits']:
                     records.append(r['_source'])
 
             elif term == "signature":
                 #records = results_db.analysis.find({"signatures.description": {"$regex": value, "$options": "-i"}}).sort([["_id", -1]])
                 #FIXME: implement regexp
+
                 result = es.search(
                               index="cuckoo", 
                               doc_type="analysis", 
-                              body={"query": 
-                                { 
-                                      "term" : {
-                                          "signatures.description" : value
-                                      }
-                                }
-                              }
-                            )
+                              q='signatures.description : "' + value + '"'
+                                  )
+
+
                 records = []
-                for r in result:
+                for r in result['hits']['hits']:
                     records.append(r['_source'])
 
             elif term == "url":
                 #records = results_db.analysis.find({"target.url": value}).sort([["_id", -1]])
                 #FIXME: implement regexp
+
                 result = es.search(
                               index="cuckoo", 
                               doc_type="analysis", 
-                              body={"query": 
-                                { 
-                                      "term" : {
-                                          "target.url" : value
-                                      }
-                                }
-                              }
-                            )
+                              q='target.url : "' + value + '"'
+                                  )
+
+
                 records = []
-                for r in result:
+                for r in result['hits']['hits']:
                     records.append(r['_source'])
 
             elif term == "imphash":
                 #records = results_db.analysis.find({"static.pe_imphash": value}).sort([["_id", -1]])
                 #FIXME: implement regexp
+
                 result = es.search(
                               index="cuckoo", 
                               doc_type="analysis", 
-                              body={"query": 
-                                { 
-                                      "term" : {
-                                          "static.pe_imphash" : value
-                                      }
-                                }
-                              }
-                            )
+                              q='static.pe_imphash : "' + value + '"'
+                                  )
+
+
                 records = []
-                for r in result:
+                for r in result['hits']['hits']:
                     records.append(r['_source'])
+            elif term == "all":
+                #records = results_db.analysis.find({"static.pe_imphash": value}).sort([["_id", -1]])
+                #FIXME: implement regexp
+
+                result = es.search(
+                              index="cuckoo", 
+                              doc_type="analysis", 
+                              q= value 
+                                  )
+
+
+                records = []
+                for r in result['hits']['hits']:
+                    records.append(r['_source'])                    
 
             else:
                 return render_to_response("analysis/search.html",
@@ -485,22 +460,15 @@ def search(request):
                                           context_instance=RequestContext(request))
         else:
 
-            #FIXME: implement
 
             if re.match(r"^([a-fA-F\d]{32})$", value):
-                #records = results_db.analysis.find({"target.file.md5": value}).sort([["_id", -1]])
 
                 result = es.search(
                               index="cuckoo", 
                               doc_type="analysis", 
-                              body={"query": 
-                                { 
-                                      "term" : {
-                                          "target.file.md5" : value
-                                      }
-                                }
-                              }
-                            )
+                              q='target.file.md5 : "' + value + '"'
+                                  )
+
                 records = []
 
                 records.append(result['hits']['hits'][0]['_source'])
@@ -508,41 +476,28 @@ def search(request):
 
 
             elif re.match(r"^([a-fA-F\d]{40})$", value):
-                #records = results_db.analysis.find({"target.file.sha1": value}).sort([["_id", -1]])
                 result = es.search(
                               index="cuckoo", 
                               doc_type="analysis", 
-                              body={"query": 
-                                { 
-                                      "term" : {
-                                          "target.file.sha1" : value
-                                      }
-                                }
-                              }
-                            )
+                              q='target.file.sha1 : "' + value + '"'
+                                  )
+
                 records = []
                 records.append(result['hits']['hits'][0]['_source'])
 
 
             elif re.match(r"^([a-fA-F\d]{64})$", value):
-                #records = results_db.analysis.find({"target.file.sha256": value}).sort([["_id", -1]])
                 result = es.search(
                               index="cuckoo", 
                               doc_type="analysis", 
-                              body={"query": 
-                                { 
-                                      "term" : {
-                                          "target.file.sha256" : value
-                                      }
-                                }
-                              }
-                            )
+                              q='target.file.sha256 : "' + value + '"'
+                                  )
+
                 records = []
                 records.append(result['hits']['hits'][0]['_source'])
 
 
             elif re.match(r"^([a-fA-F\d]{128})$", value):
-                #records = results_db.analysis.find({"target.file.sha512": value}).sort([["_id", -1]])
                 result = es.search(
                               index="cuckoo", 
                               doc_type="analysis", 
