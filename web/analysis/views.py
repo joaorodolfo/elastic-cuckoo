@@ -96,6 +96,7 @@ def chunk(request, task_id, pid, pagenum):
 
         #FIXME
         # http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html
+        '''
         record = es.search(index="cuckoo", 
                             doc_type="analysis", 
                             fields="behavior.processes.process_id,behavior.processes.calls",  
@@ -103,13 +104,13 @@ def chunk(request, task_id, pid, pagenum):
                                 "query": 
                                     { 
                                         "ids" : {"values" : [int(task_id)]},
-                                        "query_string" : {
-                                          "default_field": "behavior.processes.process_id",
-                                          "query": str(pid)
+                                        "term" : {
+                                          "behavior.processes.process_id" : str(pid)
                                         }
                                     }
                             })
-
+        '''
+        record = None
 
         if not record:
             raise PermissionDenied
@@ -246,13 +247,14 @@ def search(request):
                               doc_type="analysis", 
                               body={"query": 
                                 { 
-                                      "query_string" : {
-                                          "default_field": "target.file.name",
-                                          "query": value       
+                                      "term" : {
+                                          "target.file.name" : value       
                                       }
                                 }
                               }
                             )['hits']['hits']
+
+                print result
 
                 records = []
                 for r in result:
@@ -267,9 +269,8 @@ def search(request):
                               doc_type="analysis", 
                               body={"query": 
                                 { 
-                                      "query_string" : {
-                                          "default_field": "target.file.type",
-                                          "query": value
+                                      "term" : {
+                                          "target.file.type" : value
                                       }
                                 }
                               }
@@ -286,9 +287,8 @@ def search(request):
                               doc_type="analysis", 
                               body={"query": 
                                 { 
-                                      "query_string" : {
-                                          "default_field": "strings",
-                                          "query": value
+                                      "term" : {
+                                          "strings" : value
                                       }
                                 }
                               }
@@ -305,9 +305,8 @@ def search(request):
                               doc_type="analysis", 
                               body={"query": 
                                 { 
-                                      "query_string" : {
-                                          "default_field": "target.file.ssdeep",
-                                          "query": value
+                                      "term" : {
+                                          "target.file.ssdeep" : value
                                       }
                                 }
                               }
@@ -324,9 +323,8 @@ def search(request):
                               doc_type="analysis", 
                               body={"query": 
                                 { 
-                                      "query_string" : {
-                                          "default_field": "target.file.crc32",
-                                          "query": value
+                                      "term" : {
+                                          "target.file.crc32" : value
                                       }
                                 }
                               }
@@ -343,9 +341,8 @@ def search(request):
                               doc_type="analysis", 
                               body={"query": 
                                 { 
-                                      "query_string" : {
-                                          "default_field": "behavior.summary.files",
-                                          "query": value
+                                      "term" : {
+                                          "behavior.summary.files" : value
                                       }
                                 }
                               }
@@ -362,9 +359,8 @@ def search(request):
                               doc_type="analysis", 
                               body={"query": 
                                 { 
-                                      "query_string" : {
-                                          "default_field": "behavior.summary.keys",
-                                          "query": value
+                                      "term" : {
+                                          "behavior.summary.keys" : value
                                       }
                                 }
                               }
@@ -381,9 +377,8 @@ def search(request):
                               doc_type="analysis", 
                               body={"query": 
                                 { 
-                                      "query_string" : {
-                                          "default_field": "behavior.summary.mutexes",
-                                          "query": value
+                                      "term" : {
+                                          "behavior.summary.mutexes" : value
                                       }
                                 }
                               }
@@ -400,9 +395,8 @@ def search(request):
                               doc_type="analysis", 
                               body={"query": 
                                 { 
-                                      "query_string" : {
-                                          "default_field": "network.domains.domain",
-                                          "query": value
+                                      "term" : {
+                                          "network.domains.domain" : value
                                       }
                                 }
                               }
@@ -419,9 +413,8 @@ def search(request):
                               doc_type="analysis", 
                               body={"query": 
                                 { 
-                                      "query_string" : {
-                                          "default_field": "network.hosts",
-                                          "query": value
+                                      "term" : {
+                                          "network.hosts" : value
                                       }
                                 }
                               }
@@ -438,9 +431,8 @@ def search(request):
                               doc_type="analysis", 
                               body={"query": 
                                 { 
-                                      "query_string" : {
-                                          "default_field": "signatures.description",
-                                          "query": value
+                                      "term" : {
+                                          "signatures.description" : value
                                       }
                                 }
                               }
@@ -457,9 +449,8 @@ def search(request):
                               doc_type="analysis", 
                               body={"query": 
                                 { 
-                                      "query_string" : {
-                                          "default_field": "target.url",
-                                          "query": value
+                                      "term" : {
+                                          "target.url" : value
                                       }
                                 }
                               }
@@ -476,9 +467,8 @@ def search(request):
                               doc_type="analysis", 
                               body={"query": 
                                 { 
-                                      "query_string" : {
-                                          "default_field": "static.pe_imphash",
-                                          "query": value
+                                      "term" : {
+                                          "static.pe_imphash" : value
                                       }
                                 }
                               }
@@ -505,16 +495,16 @@ def search(request):
                               doc_type="analysis", 
                               body={"query": 
                                 { 
-                                      "query_string" : {
-                                          "default_field": "target.file.md5",
-                                          "query": value
+                                      "term" : {
+                                          "target.file.md5" : value
                                       }
                                 }
                               }
                             )
                 records = []
-                for r in result:
-                    records.append(r['_source'])
+
+                records.append(result['hits']['hits'][0]['_source'])
+
 
 
             elif re.match(r"^([a-fA-F\d]{40})$", value):
@@ -524,16 +514,16 @@ def search(request):
                               doc_type="analysis", 
                               body={"query": 
                                 { 
-                                      "query_string" : {
-                                          "default_field": "target.file.sha1",
-                                          "query": value
+                                      "term" : {
+                                          "target.file.sha1" : value
                                       }
                                 }
                               }
                             )
                 records = []
-                for r in result:
-                    records.append(r['_source'])                
+                records.append(result['hits']['hits'][0]['_source'])
+
+
             elif re.match(r"^([a-fA-F\d]{64})$", value):
                 #records = results_db.analysis.find({"target.file.sha256": value}).sort([["_id", -1]])
                 result = es.search(
@@ -541,16 +531,16 @@ def search(request):
                               doc_type="analysis", 
                               body={"query": 
                                 { 
-                                      "query_string" : {
-                                          "default_field": "target.file.sha256",
-                                          "query": value
+                                      "term" : {
+                                          "target.file.sha256" : value
                                       }
                                 }
                               }
                             )
                 records = []
-                for r in result:
-                    records.append(r['_source'])                
+                records.append(result['hits']['hits'][0]['_source'])
+
+
             elif re.match(r"^([a-fA-F\d]{128})$", value):
                 #records = results_db.analysis.find({"target.file.sha512": value}).sort([["_id", -1]])
                 result = es.search(
@@ -558,16 +548,16 @@ def search(request):
                               doc_type="analysis", 
                               body={"query": 
                                 { 
-                                      "query_string" : {
-                                          "default_field": "target.file.sha512",
-                                          "query": value
+                                      "term" : {
+                                          "target.file.sha512" : value
                                       }
                                 }
                               }
                             )
                 records = []
-                for r in result:
-                    records.append(r['_source'])                
+                records.append(result['hits']['hits'][0]['_source'])
+
+
             else:
                 return render_to_response("analysis/search.html",
                                           {"analyses": None,
@@ -579,6 +569,8 @@ def search(request):
         db = Database()
         analyses = []
 
+
+        print result
 
         for result in records:
             new = db.view_task(result["info"]["id"])
