@@ -93,24 +93,13 @@ def chunk(request, task_id, pid, pagenum):
         )
         '''
 
+        # FIXME: request behavior.processes.process_id and  behavior.processes.calls instead of all the fields
+        record = es.search(
+                      index="cuckoo", 
+                      doc_type="analysis", 
+                      q='behavior.processes.process_id : "' + str(pid) + '" and info.id : "' + str(task_id) + '" '
+                          )['hits']['hits'][0]['_source']
 
-        #FIXME
-        # http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html
-        '''
-        record = es.search(index="cuckoo", 
-                            doc_type="analysis", 
-                            fields="behavior.processes.process_id,behavior.processes.calls",  
-                            body= {
-                                "query": 
-                                    { 
-                                        "ids" : {"values" : [int(task_id)]},
-                                        "term" : {
-                                          "behavior.processes.process_id" : str(pid)
-                                        }
-                                    }
-                            })
-        '''
-        record = None
 
         if not record:
             raise PermissionDenied
@@ -123,8 +112,17 @@ def chunk(request, task_id, pid, pagenum):
         if not process:
             raise PermissionDenied
 
-        objectid = process["calls"][pagenum]
-        chunk = results_db.calls.find_one({"_id": ObjectId(objectid)})
+        objectid = process["calls"][pagenum] 
+        #chunk = results_db.calls.find_one({"_id": ObjectId(objectid)})
+
+        chunk = es.search(
+                      index="cuckoo", 
+                      doc_type="calls", 
+                      q='_id : "' + objectid + '" '
+                          )['hits']['hits'][0]['_source']
+
+
+
 
         return render_to_response("analysis/behavior/_chunk.html",
                                   {"chunk": chunk},
