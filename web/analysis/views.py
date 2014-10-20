@@ -140,10 +140,18 @@ def filtered_chunk(request, task_id, pid, category):
     """
     if request.is_ajax():
         # Search calls related to your PID.
-        record = results_db.analysis.find_one(
-            {"info.id": int(task_id), "behavior.processes.process_id": int(pid)},
-            {"behavior.processes.process_id": 1, "behavior.processes.calls": 1}
-        )
+        #record = results_db.analysis.find_one(
+        #    {"info.id": int(task_id), "behavior.processes.process_id": int(pid)},
+        #    {"behavior.processes.process_id": 1, "behavior.processes.calls": 1}
+        #)
+
+
+        record = es.search(
+                      index="cuckoo", 
+                      doc_type="analysis", 
+                      q='info.id: "' + str(task_id) + '" and behavior.processes.process_id : "' + str(pid) + '" '
+                          )['hits']['hits'][0]['_source']
+
 
         if not record:
             raise PermissionDenied
@@ -162,7 +170,14 @@ def filtered_chunk(request, task_id, pid, category):
 
         # Populate dict, fetching data from all calls and selecting only appropriate category.
         for call in process["calls"]:
-            chunk = results_db.calls.find_one({"_id": call})
+            #chunk = results_db.calls.find_one({"_id": call})
+            chunk = es.search(
+                          index="cuckoo", 
+                          doc_type="calls", 
+                          q='_id : "' + call + '" '
+                              )['hits']['hits'][0]['_source']
+
+
             for call in chunk["calls"]:
                 if call["category"] == category:
                     filtered_process["calls"].append(call)
