@@ -316,7 +316,7 @@ class FileUpload(object):
 
         dir_part, filename = os.path.split(buf)
 
-        if "./" in buf or not dir_part:
+        if "./" in buf or not dir_part or buf.startswith("/"):
             raise CuckooOperationalError("FileUpload failure, banned path.")
 
         for restricted in self.RESTRICTED_DIRECTORIES:
@@ -330,6 +330,9 @@ class FileUpload(object):
             return False
 
         file_path = os.path.join(self.storagepath, buf.strip())
+
+        if not file_path.startswith(self.storagepath):
+            raise CuckooOperationalError("FileUpload failure, path sanitization failed.")
 
         self.fd = open(file_path, "wb")
         chunk = self.handler.read_any()
