@@ -21,6 +21,8 @@ sys.path.append(settings.CUCKOO_PATH)
 
 from lib.cuckoo.core.database import Database, TASK_PENDING
 
+import base64
+
 #results_db = pymongo.connection.Connection(settings.MONGO_HOST, settings.MONGO_PORT).cuckoo
 es = Elasticsearch()
 
@@ -206,13 +208,22 @@ def report(request, task_id):
 # FIXME: implement
 @require_safe
 def file(request, category, object_id):
-    file_object = results_db.fs.files.find_one({"_id": ObjectId(object_id)})
+    #file_object = results_db.fs.files.find_one({"_id": ObjectId(object_id)})
+
+    print "Antes de elastic"
+
+    file_object = es.search(
+                  index="cuckoo", 
+                  doc_type="files", 
+                  q = '_id : "' + object_id + '"' 
+                      )['hits']['hits'][0]['_source']
+
 
     if file_object:
         content_type = file_object.get("contentType", "application/octet-stream")
-        file_item = fs.get(ObjectId(file_object["_id"]))
+        #file_item = fs.get(ObjectId(file_object["_id"]))
 
-        file_name = file_item.sha256
+        file_name = file_object["sha256"]
         if category == "pcap":
             file_name += ".pcap"
             content_type = "application/vnd.tcpdump.pcap"
@@ -221,7 +232,7 @@ def file(request, category, object_id):
         else:
             file_name += ".bin"
 
-        response = HttpResponse(file_item.read(), content_type=content_type)
+        response = HttpResponse(base64.b64decode(file_object["contents"]), content_type=content_type)
         response["Content-Disposition"] = "attachment; filename={0}".format(file_name)
 
         return response

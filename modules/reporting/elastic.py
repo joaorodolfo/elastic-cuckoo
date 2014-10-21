@@ -7,6 +7,9 @@ from lib.cuckoo.common.exceptions import CuckooDependencyError
 from lib.cuckoo.common.exceptions import CuckooReportError
 from lib.cuckoo.common.objects import File
 
+
+import base64
+
 try:
     from elasticsearch import Elasticsearch
     HAVE_ELASTIC = True
@@ -37,32 +40,50 @@ class ElasticDB(Report):
         @param filename: name of the file to store
         @return: object id of the stored file
         """
-        # FIXME: store files
-        return 1
-        '''
+
         if not filename:
             filename = file_obj.get_name()
 
         #jpalanco: find_one
-        existing = self.db.fs.files.find_one({"sha256": file_obj.get_sha256()})
+        #existing = self.db.fs.files.find_one({"sha256": file_obj.get_sha256()})
 
-        if existing:
-            return existing["_id"]
-        else:
+        existing = None
+
+        try:
+
+            existing = self.es.search(
+                          index="cuckoo", 
+                          doc_type="files", 
+                          q='sha256 : "' + file_obj.get_sha256() + '"'
+                              )
+
+            return existing['hits']['hits'][0]['_id']
+        except Exception as e:
+            print e
+
             #jpalanco: new_file
-            new = self.fs.new_file(filename=filename,
-                                   sha256=file_obj.get_sha256())
-            for chunk in file_obj.get_chunks():
-                new.write(chunk)
-            try:
-                new.close()
-            except FileExists:
-                to_find = {"sha256": file_obj.get_sha256()}
-                #jpalanco: find_one
-                return self.db.fs.files.find_one(to_find)["_id"]
-            else:
-                return new._id
-        '''
+            #new = self.fs.new_file(filename=filename,
+            #                       sha256=file_obj.get_sha256())
+
+
+            file_contents = base64.b64encode(file_obj.file_data)
+
+            to_insert = {"filename": filename, "sha256": file_obj.get_sha256(), "contents" : file_contents}
+            new = self.es.index(index="cuckoo", doc_type="files", body=to_insert)
+
+            return new['_id']
+
+            #for chunk in file_obj.get_chunks():
+            #    new.write(chunk)
+            #try:
+            #    new.close()
+            #
+            #except FileExists:
+                #to_find = {"sha256": file_obj.get_sha256()}
+                #return self.db.fs.files.find_one(to_find)["_id"]
+            #else:
+            #    return new._id
+
 
     def run(self, results):
         """Writes report.
