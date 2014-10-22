@@ -205,12 +205,9 @@ def report(request, task_id):
                               {"analysis": report},
                               context_instance=RequestContext(request))
 
-# FIXME: implement
 @require_safe
 def file(request, category, object_id):
     #file_object = results_db.fs.files.find_one({"_id": ObjectId(object_id)})
-
-    print "Antes de elastic"
 
     file_object = es.search(
                   index="cuckoo", 
