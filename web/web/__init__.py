@@ -11,12 +11,12 @@ sys.path.append(settings.CUCKOO_PATH)
 from lib.cuckoo.common.constants import CUCKOO_ROOT
 from lib.cuckoo.common.config import Config
 
-cfg = Config("reporting").mongodb
+cfg = Config("reporting").elastic
 
 # Checks if mongo reporting is enabled in Cuckoo.
 if not cfg.get("enabled"):
-    raise Exception("Mongo reporting module is not enabled in cuckoo, aborting!")
+    raise Exception("Elastic reporting module is not enabled in cuckoo, aborting!")
 
 # Get connection options from reporting.conf.
-settings.MONGO_HOST = cfg.get("host", "127.0.0.1")
-settings.MONGO_PORT = cfg.get("port", 27017)
+settings.ELASTIC_HOST = cfg.get("host", "127.0.0.1")
+settings.ELASTIC_PORT = cfg.get("port", 9200)
