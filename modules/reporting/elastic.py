@@ -10,6 +10,8 @@ from lib.cuckoo.common.objects import File
 
 import base64
 
+from datetime import datetime
+
 try:
     from elasticsearch import Elasticsearch
     HAVE_ELASTIC = True
@@ -155,7 +157,7 @@ class ElasticDB(Report):
                     dropped_id = self.store_file(drop, filename=dropped["name"])
                     new_drop["object_id"] = dropped_id
 
-            new_dropped.append(new_drop)
+                new_dropped.append(new_drop)
 
         report["dropped"] = new_dropped
 
@@ -218,6 +220,7 @@ class ElasticDB(Report):
         # Store the results in the report.
         report["behavior"] = dict(report["behavior"])
         report["behavior"]["processes"] = new_processes
+        report["timestamp"] = datetime.now()
 
         # Store the report and retrieve its object id.
         self.es.index(index="cuckoo", doc_type="analysis", id=results["info"]["id"], body=report)
