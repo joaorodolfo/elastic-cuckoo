@@ -1,4 +1,4 @@
-# Copyright (C) 2010-2014 Cuckoo Foundation.
+# Copyright (C) 2010-2015 Cuckoo Foundation.
 # This file is part of Cuckoo Sandbox - http://www.cuckoosandbox.org
 # See the file 'docs/LICENSE' for copying permission.
 
@@ -45,6 +45,10 @@ def index(request):
         for task in tasks_files:
             new = task.to_dict()
             new["sample"] = db.view_sample(new["sample_id"]).to_dict()
+
+            filename = os.path.basename(new["target"])
+            new.update({"filename": filename})
+
             if db.view_errors(task.id):
                 new["errors"] = True
 

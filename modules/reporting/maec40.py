@@ -1,5 +1,5 @@
 # Copyright (c) 2013, The MITRE Corporation
-# Copyright (c) 2010-2014, Cuckoo Developers
+# Copyright (c) 2010-2015, Cuckoo Developers
 # All rights reserved.
 
 # This file is part of Cuckoo Sandbox - http://www.cuckoosandbox.org
@@ -911,8 +911,6 @@ class MAEC40Report(Report):
         """Adds Dropped files as Objects."""
         if "dropped" in self.results:
             objs = self.results["dropped"]
-            if self.results["target"]["category"] == "file":
-                objs.append(self.results["target"]["file"])
             # Add the named object collection.
             self.dynamic_bundle.add_named_object_collection("Dropped Files", self.id_generator.generate_object_collection_id())
             for file in objs:
