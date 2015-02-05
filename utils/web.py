@@ -68,12 +68,12 @@ def get_pagination_limit(new_limit):
     @params new_limit: new pagination limit
     """
     default_limit = 50
-    
+
     limit_cookie = request.get_cookie("pagination_limit")
     logging.info("Got cookie: {0}".format(limit_cookie))
-    
+
     cookie_expires = time.mktime((datetime.now() + timedelta(days=365)).timetuple())
-    
+
     if new_limit <= 0:
         if limit_cookie:
             try:
@@ -90,7 +90,7 @@ def get_pagination_limit(new_limit):
         limit = new_limit
         logging.info("Setting new limit: {0}".format(limit))
         response.set_cookie("pagination_limit", str(limit), path="/", expires=cookie_expires)
-    
+
     return limit
 
 @hook("after_request")
@@ -128,27 +128,29 @@ def browse():
 def browse_page(page_id=1, new_limit=-1):
     if page_id < 1:
         page_id = 1
-    
+
     limit = get_pagination_limit(new_limit)
-    
+
     tot_results = db.count_tasks()
-    tot_pages = (tot_results / limit) + ((tot_results % limit) and 1 or 0) # Add 1 to tot_pages
-                                                                           # if there's some remainder
-    # Check that the user doesn't require an impossible pagination
+
+     # Add 1 to tot_pages, if there's some remainder.
+    tot_pages = (tot_results / limit) + ((tot_results % limit) and 1 or 0)
+
+    # Check that the user doesn't require an impossible pagination.
     if page_id > tot_pages:
         page_id = tot_pages
-    
+
     offset = (page_id - 1) * limit
     rows = db.list_tasks(limit=limit, offset=offset)
-    
+
     tasks = parse_tasks(rows)
-    
+
     if tot_results:
         pagination_start = offset + 1
     else:
         pagination_start = 0
     pagination_end = offset + len(rows)
-    
+
     pagination = {
         "start": pagination_start,
         "end": pagination_end,
@@ -157,9 +159,9 @@ def browse_page(page_id=1, new_limit=-1):
         "tot_results": tot_results,
         "tot_pages": tot_pages
     }
-    
+
     template = env.get_template("browse.html")
-    
+
     return template.render({"rows": tasks, "os": os, "pagination": pagination})
 
 @route("/static/<filename:path>")
@@ -261,32 +263,29 @@ def get_pcap(task_id):
 
     return open(pcap_path, "rb").read()
 
-@route("/files/<task_id>")  
-def get_files(task_id):  
-    if not task_id.isdigit():  
-        return HTTPError(code=404, output="The specified ID is invalid")  
-   
-    files_path = os.path.join(CUCKOO_ROOT, "storage", "analyses", task_id, "files")  
-    zip_file = os.path.join(CUCKOO_ROOT, "storage", "analyses", task_id, "files.zip") 
-    dropped_files = []
+@route("/files/<task_id>")
+def get_files(task_id):
+    if not task_id.isdigit():
+        return HTTPError(code=404, output="The specified ID is invalid")
+
+    files_path = os.path.join(CUCKOO_ROOT, "storage", "analyses", task_id, "files")
+    zip_file = os.path.join(CUCKOO_ROOT, "storage", "analyses", task_id, "files.zip")
         
-    zip = zipfile.ZipFile(zip_file, 'w', compression=zipfile.ZIP_DEFLATED)
-    root_len = len(os.path.abspath(files_path))
-    for root, dirs, files in os.walk(files_path):
-        archive_root = os.path.abspath(root)[root_len:]
-        for f in files:
-            fullpath = os.path.join(root, f)
-            archive_name = os.path.join(archive_root, f)
-            print f
-            zip.write(fullpath, archive_name, zipfile.ZIP_DEFLATED)
-    zip.close()
-   
-    if not os.path.exists(files_path):  
-        return HTTPError(code=404, output="Files not found")  
-   
-    response.content_type = 'application/zip'  
-    response.set_header('Content-Disposition', "attachment; filename=cuckoo_task_%s(not_encrypted).zip" % (task_id))  
-    return open(zip_file, "rb").read()   
+    with zipfile.ZipFile(zip_file, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        root_len = len(os.path.abspath(files_path))
+        for root, dirs, files in os.walk(files_path):
+            archive_root = os.path.abspath(root)[root_len:]
+            for f in files:
+                fullpath = os.path.join(root, f)
+                archive_name = os.path.join(archive_root, f)
+                archive.write(fullpath, archive_name, zipfile.ZIP_DEFLATED)
+
+    if not os.path.exists(files_path):
+        return HTTPError(code=404, output="Files not found")
+
+    response.content_type = "application/zip"
+    response.set_header("Content-Disposition", "attachment; filename=cuckoo_task_%s(not_encrypted).zip" % (task_id))
+    return open(zip_file, "rb").read()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

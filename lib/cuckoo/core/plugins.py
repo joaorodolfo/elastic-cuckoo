@@ -313,9 +313,12 @@ class RunSignatures(object):
     def process(self, signature):
         """Run a signature.
         @param signature: signature to run.
-        @param signs: signature results dict.
         @return: matched signature.
         """
+        # Skip signature processing if there are no results.
+        if not self.results:
+            return
+
         # Initialize the current signature.
         try:
             current = signature(self.results)
@@ -348,6 +351,7 @@ class RunSignatures(object):
         return None
 
     def run(self):
+        """Run evented signatures."""
         # This will contain all the matched signatures.
         matched = []
 
@@ -370,7 +374,7 @@ class RunSignatures(object):
                 else:
                     log.debug("\t |-- %s", sig.name)
 
-            # Iterate calls and tell interested signatures about them
+            # Iterate calls and tell interested signatures about them.
             for proc in self.results["behavior"]["processes"]:
                 for call in proc["calls"]:
                     # Loop through active evented signatures.

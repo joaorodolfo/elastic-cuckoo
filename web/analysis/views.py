@@ -274,6 +274,7 @@ def file(request, category, object_id):
             content_type = "application/vnd.tcpdump.pcap"
         elif category == "screenshot":
             file_name += ".jpg"
+            content_type = "image/jpeg"
         elif category == 'memdump':
             file_name += ".dmp"
         else:
@@ -291,10 +292,10 @@ def file(request, category, object_id):
 
 @require_safe
 def full_memory_dump_file(request, analysis_number):
-    file_path = os.path.join(CUCKOO_ROOT, 'storage', 'analyses', str(analysis_number), 'memory.dmp')
+    file_path = os.path.join(CUCKOO_ROOT, "storage", "analyses", str(analysis_number), "memory.dmp")
     if os.path.exists(file_path):
         content_type = "application/octet-stream"
-        response = HttpResponse(open(file_path, 'rb').read(), content_type=content_type)
+        response = HttpResponse(open(file_path, "rb").read(), content_type=content_type)
         response["Content-Disposition"] = "attachment; filename=memory.dmp"
 
         return response

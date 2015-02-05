@@ -841,6 +841,9 @@ class Signature(object):
                       expression or not and therefore should be compiled.
         @return: boolean with the result of the check.
         """
+        if "domains" not in self.results["network"]:
+            return None
+
         for item in self.results["network"]["domains"]:
             if self._check_value(pattern=pattern,
                                  subject=item["domain"],
@@ -868,7 +871,7 @@ class Signature(object):
         """Retrieves the value of a specific argument from an API call.
         @param call: API call object.
         @param name: name of the argument to retrieve.
-        @return: value of the requried argument.
+        @return: value of the required argument.
         """
         # Check if the call passed to it was cached already.
         # If not, we can start caching it and store a copy converted to a dict.
